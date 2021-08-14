@@ -1,6 +1,11 @@
+ #ifndef custom_types_h
+ #define custom_types_h
 
-struct SavedEEPROMData {
-  uint16_t min_water_level;
-  uint16_t max_water_level;
-  float tank_volume;
-}
+
+enum UnblockingModes{
+  UB_AUTO, UB_MANUAL
+};
+
+
+
+#endif /* end of include guard:  */
