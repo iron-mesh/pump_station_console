@@ -1,0 +1,224 @@
+//#include <PumpStation.h>
+//#include <custom_functions.h>
+
+PumpStation::PumpStation(int prelay_pin, int float_pin, int sensor_pin, int pumpswitch_pin){
+
+  pinMode(prelay_pin, INPUT);
+  pinMode(float_pin, INPUT);
+  pinMode(sensor_pin, INPUT);
+  pinMode(pumpswitch_pin, OUTPUT);
+  _set_pumpswitch_status(LOW);
+
+  _prelay_pin = prelay_pin;
+  _float_pin = float_pin;
+  _sensor_pin = sensor_pin;
+  _pumpswitch_pin = pumpswitch_pin;
+
+  _min_pressure_ADC = 0;
+  _max_pressure_ADC = 0;
+  _tank_volume = 0;
+  _critical_pressure_ADC = 0;
+  _corr_pressure_ADC = 0;
+  _statement_changed_handler = NULL;
+  _status_flags = 0;
+}
+
+bool PumpStation::_update_statuses(){
+  bool status_changed = false;
+  _current_pressure_ADC = analogRead(_sensor_pin);
+
+  switch(_mode){
+  case PRELAY_MODE:
+    if (bitRead(_status_flags, ID_PRELAY_STATUS) != digitalRead(_prelay_pin)){
+      _status_flags ^= (1 << ID_PRELAY_STATUS);
+      status_changed = true;
+    }
+    break;
+  case SENSOR_MODE:
+    const bool lps = bitRead(_status_flags, ID_LOW_PRESSURE_STATUS);
+    if (((_current_pressure_ADC <= _min_pressure_ADC) && !lps )||
+        (_current_pressure_ADC >= _max_pressure_ADC && lps)){
+    _status_flags ^= (1 << ID_LOW_PRESSURE_STATUS);
+    status_changed = true;
+    }
+    break;
+  }
+
+  if (bitRead(_status_flags, ID_FLOAT_STATUS) != digitalRead(_float_pin)){
+    _status_flags ^= (1 << ID_FLOAT_STATUS);
+    status_changed = true;
+  }
+
+  if (_critical_pressure_ADC > 0){
+    bool cur_critical_pressure_s = (_current_pressure_ADC >= _critical_pressure_ADC);
+    bool prev_critical_pressure_s = bitRead(_status_flags, ID_CRITICAL_PRESSURE_STATUS);
+
+    if (prev_critical_pressure_s != cur_critical_pressure_s){
+      _status_flags ^= (1 << ID_CRITICAL_PRESSURE_STATUS);
+      status_changed = true;
+    }
+  }
+
+  if (bitRead(_status_flags, ID_PSENSOR_OK_STATUS) != (_current_pressure_ADC > 102 && _current_pressure_ADC < 912)){
+    _status_flags ^= (1 << ID_PSENSOR_OK_STATUS);
+    status_changed = true;
+  }
+
+return status_changed;
+}
+
+void PumpStation::_process(){
+  if(!bitRead(_status_flags, ID_GLOBAL_BLOCKING_STATUS)){ // обработка состояний при отсутствии блокировки
+    switch(_mode){
+      case PRELAY_MODE:
+        _set_pumpswitch_status(bitRead(_status_flags, ID_PRELAY_STATUS));
+        break;
+      case SENSOR_MODE:
+        _set_pumpswitch_status(bitRead(_status_flags, ID_LOW_PRESSURE_STATUS));
+
+        if (!bitRead(_status_flags, ID_PSENSOR_OK_STATUS)){
+          _set_global_blocking();}
+        break;
+    }
+
+    if(!bitRead(_status_flags, ID_FLOAT_STATUS)||
+    (_critical_pressure_ADC > 0 && bitRead(_status_flags, ID_CRITICAL_PRESSURE_STATUS))){
+    _set_global_blocking();}
+  }
+}
+
+void PumpStation::_set_pumpswitch_status(bool status){
+  digitalWrite(_pumpswitch_pin, status);
+}
+
+void PumpStation::_set_global_blocking(){
+  _set_pumpswitch_status(false);
+  bitSet(_status_flags, ID_GLOBAL_BLOCKING_STATUS);
+}
+
+void PumpStation::process(){
+
+
+}
+
+int PumpStation::activate(){
+
+  }
+
+void PumpStation::deactivate(){
+    _set_pumpswitch_status(false);
+    bitClear(_status_flags, ID_ACTIVITY_STATUS);
+  }
+
+bool PumpStation::is_global_blocking_conditions(){
+
+}
+
+int PumpStation::deblock(){
+
+
+}
+
+void PumpStation::attach_status_changed_handler(void (*handler)()){
+
+}
+
+bool PumpStation::get_status_by_id(byte id){
+
+}
+
+int PumpStation::get_mode(){
+
+}
+
+void PumpStation::set_mode(int mode){
+
+}
+
+float PumpStation::get_pressure_bar(){
+
+}
+
+uint16_t PumpStation::get_pressure_ADC(){
+
+}
+
+float PumpStation::get_min_pressure_bar(){
+
+}
+
+uint16_t PumpStation::get_min_pressure_ADC(){
+
+}
+
+float PumpStation::get_max_pressure_bar(){
+
+}
+
+uint16_t PumpStation::get_max_pressure_ADC(){
+
+}
+
+void PumpStation::set_min_pressure_bar(float value){
+
+}
+
+void PumpStation::set_min_pressure_ADC(uint16_t value){
+
+}
+
+void PumpStation::set_max_pressure_bar(float value){
+  _max_pressure_ADC = float_to_pressureADC(value);
+}
+
+void PumpStation::set_max_pressure_ADC(uint16_t value){
+  _max_pressure_ADC = value;
+}
+
+float PumpStation::get_critical_pressure_bar(){
+
+}
+
+uint16_t PumpStation::get_critical_pressure_ADC(){
+
+}
+
+void PumpStation::set_critical_pressure_bar(float value){
+  _critical_pressure_ADC = float_to_pressureADC(value);
+}
+
+void PumpStation::set_critical_pressure_ADC(uint16_t value){
+    _critical_pressure_ADC = value;
+}
+
+void PumpStation::set_tank_volume(float volume){
+  _tank_volume = volume;
+}
+
+float PumpStation::get_tank_volume(){
+  return _tank_volume;
+}
+
+void PumpStation::set_press_corr_bar(float value){
+  _corr_pressure_ADC = float_to_pressureADC(value);
+}
+
+void PumpStation::set_press_corr_ADC(uint16_t value){
+  _corr_pressure_ADC = value;
+}
+
+float PumpStation::get_press_corr_bar(){
+  return pressureADC_to_float(_corr_pressure_ADC);
+}
+
+uint16_t PumpStation::get_press_corr_ADC(){
+  return _corr_pressure_ADC;
+}
+
+float PumpStation::get_water_reserveL(){
+  return (_current_pressure_ADC < _min_pressure_ADC) ? 0 : (float)((_current_pressure_ADC - _min_pressure_ADC) / (_max_pressure_ADC - _min_pressure_ADC - _corr_pressure_ADC)) * _tank_volume;
+}
+
+int PumpStation::get_water_reserve_percent(){
+    return (_current_pressure_ADC < _min_pressure_ADC) ? 0 : trunc(((_current_pressure_ADC - _min_pressure_ADC) / (_max_pressure_ADC - _min_pressure_ADC - _corr_pressure_ADC)) * 100);
+}

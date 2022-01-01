@@ -13,25 +13,31 @@ template <typename T>
       if (_encoder->isRight()){
         if(current_value < max_value) {
           current_value += step;
-          value_changed = true;}
+          if (current_value > max_value) current_value = max_value;
+          value_changed = true;
+        }
       }
 
       if (_encoder->isLeft()){
         if(current_value > min_value) {
           current_value -= step;
-          value_changed = true;}
+          if (current_value < min_value) current_value = min_value;
+          value_changed = true;
+        }
       }
 
       if (_encoder->isRightH()){
         if(current_value < max_value - b_step) {
           current_value += b_step;
-          value_changed = true;}
+          value_changed = true;
+        }
       }
 
       if (_encoder->isLeftH()){
         if(current_value > min_value + b_step) {
           current_value -= b_step;
-          value_changed = true;}
+          value_changed = true;
+        }
       }
 
       if(value_changed){

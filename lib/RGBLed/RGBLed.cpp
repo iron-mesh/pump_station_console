@@ -10,6 +10,7 @@ RGBLed::RGBLed(int aPin){
 }
 
 void RGBLed::setMode(int mode){
+  if(_mode == mode) return;
   _mode = mode;
   switch (mode){
       case TURN_OFF: _turnOff();
@@ -24,6 +25,7 @@ void RGBLed::setMode(int mode){
 }
 
 void RGBLed::setColor (uint32_t aColor){
+  if(_color == aColor) return;
   _color = aColor;
   if (_mode == PERPETUAL) _turnOn();
 }
