@@ -10,7 +10,7 @@
 
 #include "custom_types.h"
 
-#define DEBUG_MODE 1
+#define DEBUG_MODE 0
 #include "custom_functions.h"
 
 #include <EEPROM.h>
@@ -528,6 +528,11 @@ void render_page(uint8_t page_num){
     lcd.print(F("EH"));
     lcd.write(byte(1));//И
     lcd.write('E');
+    if (ps.get_status_by_id(ID_CRITICAL_PRESSURE_STATUS)){ // вывести предупреждение, если давление выше критического
+      lcd.print(F(" (!KP"));
+      lcd.write(byte(1));//И
+      lcd.print(F("T)"));
+    }
     lcd.setCursor(0,1);
     lcd.print(ps.get_pressure_bar(), 2);
     lcd.write(' ');

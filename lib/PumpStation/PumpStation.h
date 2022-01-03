@@ -48,7 +48,7 @@ public:
 
   void process(){
     if(_update_statuses()){
-      if(bitRead(_status_flags, ID_ACTIVITY_STATUS)) _process();
+       _process();
       _statement_changed_handler();
     }
   }
@@ -236,7 +236,7 @@ private:
           }
       }
 
-    if (bitRead(_status_flags, ID_PSENSOR_OK_STATUS) != (_current_pressure_ADC > 100 && _current_pressure_ADC < 912)){
+    if (bitRead(_status_flags, ID_PSENSOR_OK_STATUS) != (_current_pressure_ADC > 95 && _current_pressure_ADC < 920)){
       _status_flags ^= (1 << ID_PSENSOR_OK_STATUS);
       status_changed = true;
     }
@@ -245,7 +245,8 @@ private:
   }
 
   void _process(){
-    if(!bitRead(_status_flags, ID_GLOBAL_BLOCKING_STATUS)){ // обработка состояний при отсутствии блокировки
+    if(!bitRead(_status_flags, ID_GLOBAL_BLOCKING_STATUS) &&
+          bitRead(_status_flags, ID_ACTIVITY_STATUS)) { // обработка состояний при отсутствии блокировки
       switch(_mode){
         case PRELAY_MODE:
           _set_pumpswitch_status(bitRead(_status_flags, ID_PRELAY_STATUS));
