@@ -19,7 +19,7 @@
 #include "InputF.h"
 #include "PumpStation.h"
 
-#define VERSION "2.0.0"
+#define VERSION "2.0.1"
 
 #define P_BUTTON1 2 //пин кнопки 1
 #define P_RGBLED_INDICATOR 9 // дата пин rgb светодиода
@@ -39,6 +39,7 @@
 #define INIT_KEY 69    // ключ первого запуска. 0-254, на выбор
 
 #define MAX_UNBLOCKING_DELAY 1440 // максимальное время задержки разблокировки мин
+#define DELTA_P 0.1  //минимальная разница между максимальным и минимальным давлениями
 
 //flags
 
@@ -455,11 +456,11 @@ void input_parameters(){
         if(ps.get_critical_pressure_ADC() != eeprom_read_word(&critical_pressure_ADC_addr)) eeprom_update_word(&critical_pressure_ADC_addr, ps.get_critical_pressure_ADC());
         break;
 
-        case(2): ps.set_max_pressure_bar(InputF::input_float(ps.get_max_pressure_bar(), ps.get_min_pressure_bar(), 12));
+        case(2): ps.set_max_pressure_bar(InputF::input_float(ps.get_max_pressure_bar(), ps.get_min_pressure_bar() + DELTA_P, 12));
         if(ps.get_max_pressure_ADC() != eeprom_read_word(&max_pressure_ADC_addr)) eeprom_update_word(&max_pressure_ADC_addr, ps.get_max_pressure_ADC());
         break;
 
-        case(3): ps.set_min_pressure_bar(InputF::input_float(ps.get_min_pressure_bar(), 0, ps.get_max_pressure_bar()));
+        case(3): ps.set_min_pressure_bar(InputF::input_float(ps.get_min_pressure_bar(), 0, ps.get_max_pressure_bar() - DELTA_P));
         if(ps.get_min_pressure_ADC() != eeprom_read_word(&min_pressure_ADC_addr)) eeprom_update_word(&min_pressure_ADC_addr, ps.get_min_pressure_ADC());
         break;
 
@@ -625,11 +626,17 @@ void render_page(uint8_t page_num){
     lcd.write(byte(1)); //И
     lcd.setCursor(0,1);
     lcd.print(F("    "));
-    lcd.print(time_until_deblock / 3600);
+    uint16_t tmp = time_until_deblock / 3600; // часы
+    if(tmp < 10) lcd.write('0');
+    lcd.print(tmp);
     lcd.write(':');
-    lcd.print(time_until_deblock % 3600 / 60);
+    tmp = time_until_deblock % 3600 / 60; // минуты
+    if(tmp < 10) lcd.write('0');
+    lcd.print(tmp);
     lcd.write(':');
-    lcd.print(time_until_deblock % 3600 % 60);
+    tmp = time_until_deblock % 3600 % 60; //секунды
+    if(tmp < 10) lcd.write('0');
+    lcd.print(tmp);
     break;
 }
 }

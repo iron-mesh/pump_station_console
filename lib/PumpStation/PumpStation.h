@@ -76,7 +76,7 @@ public:
     return (
       ((_mode == SENSOR_MODE) && !bitRead(_status_flags, ID_PSENSOR_OK_STATUS )) ||
       !bitRead(_status_flags, ID_FLOAT_STATUS) ||
-      bitRead(_status_flags, ID_CRITICAL_PRESSURE_STATUS)
+      (_critical_pressure_ADC > 110 && bitRead(_status_flags, ID_CRITICAL_PRESSURE_STATUS))
     );
   }
 
